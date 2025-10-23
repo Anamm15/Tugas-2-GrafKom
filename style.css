@@ -1,0 +1,258 @@
+/* --- Variabel Global untuk Tema (Light Mode) --- */
+:root {
+ --bg-color: #f4f4f9; /* Latar belakang abu-abu sangat muda */
+ --panel-bg: #ffffff; /* Panel putih bersih */
+ --primary-color: #007bff; /* Warna aksen (biru) */
+ --primary-hover: #0056b3;
+ --text-color: #222222; /* Teks gelap */
+ --text-secondary: #555555; /* Teks label abu-abu */
+ --border-color: #e0e0e0; /* Border abu-abu muda */
+ --debug-bg: #f0f0f0; /* Latar belakang info debug */
+ --shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Shadow lebih lembut */
+ --border-radius: 8px;
+}
+
+/* --- Pengaturan Dasar & Font --- */
+body {
+ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+  Arial, sans-serif;
+ background-color: var(--bg-color);
+ color: var(--text-color);
+ margin: 0;
+ padding: 20px;
+ display: flex;
+ justify-content: center;
+ align-items: center; /* Pusatkan secara vertikal */
+ min-height: 100vh;
+ box-sizing: border-box;
+}
+
+/* --- Layout Utama (Side-by-side) --- */
+.main-container {
+ display: flex;
+ flex-wrap: nowrap; /* Paksa agar berdampingan */
+ align-items: flex-start; /* Ratakan bagian atas */
+ gap: 20px;
+ justify-content: center;
+}
+
+/* --- Kanvas WebGL (Ukuran Tetap) --- */
+#gl-canvas {
+ background-color: #FFF;
+ border-radius: var(--border-radius);
+ box-shadow: var(--shadow);
+ border: 1px solid var(--border-color);
+ flex-shrink: 0; 
+}
+
+/* --- Panel Kontrol Utama --- */
+.controls-panel {
+ background-color: var(--panel-bg);
+ padding: 20px;
+ border-radius: var(--border-radius);
+ box-shadow: var(--shadow);
+ width: 500px;
+ max-height: 700px; /* Samakan tinggi dengan kanvas */
+ overflow-y: auto; /* Tambahkan scroll jika konten penuh */
+ border: 1px solid var(--border-color);
+ box-sizing: border-box;
+}
+
+/* --- Judul Panel --- */
+.controls-panel h2 {
+ text-align: center;
+ margin-top: 0;
+ margin-bottom: 25px;
+ color: var(--text-color);
+ font-weight: 600;
+ border-bottom: 2px solid var(--border-color);
+ padding-bottom: 15px;
+}
+
+.controls-panel h2 .emoji {
+ margin-right: 10px;
+ font-size: 1.2em;
+}
+
+/* --- Grup Kontrol (Transform, View, dll) --- */
+.control-group {
+ margin-bottom: 25px;
+}
+
+.control-group h3 {
+ color: var(--primary-color);
+ margin-top: 0;
+ margin-bottom: 15px;
+ font-size: 1.1em;
+ font-weight: 500;
+ border-bottom: 1px solid var(--border-color);
+ padding-bottom: 8px;
+}
+
+/* Keterangan kecil (untuk toggle) */
+.control-group small {
+ color: var(--text-secondary);
+ font-style: italic;
+ margin-top: -10px;
+ display: block;
+}
+
+/* --- Item Kontrol (Slider) --- */
+.control-item {
+ margin-bottom: 15px;
+}
+
+.control-item label {
+ display: block;
+ font-size: 0.9em;
+ color: var(--text-secondary);
+ margin-bottom: 8px;
+ font-weight: 500;
+}
+
+.slider-container {
+ display: flex;
+ align-items: center;
+ gap: 10px;
+}
+
+/* --- Info Debug (Nilai Slider) --- */
+.slider-container span {
+ font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
+  monospace;
+ font-size: 0.9em;
+ background-color: var(--debug-bg);
+ color: var(--text-color);
+ padding: 4px 8px;
+ border-radius: 4px;
+ min-width: 45px; /* Lebar tetap agar rapi */
+ text-align: right;
+ box-sizing: border-box;
+}
+
+/* --- Kustomisasi Slider (input[type="range"]) --- */
+input[type="range"] {
+ flex-grow: 1;
+ -webkit-appearance: none;
+ appearance: none;
+ width: 100%;
+ height: 8px;
+ background: var(--debug-bg);
+ border-radius: 5px;
+ outline: none;
+ cursor: pointer;
+}
+
+/* Kustomisasi Thumb (Tombol geser) - WebKit */
+input[type="range"]::-webkit-slider-thumb {
+ -webkit-appearance: none;
+ appearance: none;
+ width: 18px;
+ height: 18px;
+ background: var(--primary-color);
+ border-radius: 50%;
+ /* Border agar kontras dengan track */
+ border: 2px solid var(--panel-bg); 
+ transition: background 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover,
+input[type="range"]:focus::-webkit-slider-thumb {
+ background: var(--primary-hover);
+}
+
+/* Kustomisasi Thumb - Mozilla */
+input[type="range"]::-moz-range-thumb {
+ width: 18px;
+ height: 18px;
+ background: var(--primary-color);
+ border-radius: 50%;
+ border: 2px solid var(--panel-bg);
+ transition: background 0.2s ease;
+ cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb:hover,
+input[type="range"]:focus::-moz-range-thumb {
+ background: var(--primary-hover);
+}
+
+/* --- Item Kontrol (Toggle Switch) --- */
+.control-item-toggle {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ margin-bottom: 10px;
+}
+
+.control-item-toggle label {
+ font-size: 0.95em;
+ color: var(--text-color);
+ font-weight: 500;
+}
+
+.control-group .control-item-color {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 10px;
+   margin-bottom: 15px; 
+}
+
+/* Kustomisasi Toggle Switch */
+.toggle-switch {
+ -webkit-appearance: none;
+ appearance: none;
+ position: relative;
+ width: 44px;
+ height: 24px;
+ background-color: #cccccc; /* Latar abu-abu saat mati */
+ border-radius: 12px;
+ cursor: pointer;
+ transition: background-color 0.3s ease;
+}
+
+/* Lingkaran di dalam toggle */
+.toggle-switch::before {
+ content: "";
+ position: absolute;
+ top: 3px;
+ left: 3px;
+ width: 18px;
+ height: 18px;
+ background-color: white; /* Lingkaran putih */
+ border-radius: 50%;
+ transition: transform 0.3s ease;
+}
+
+/* Saat di-check (aktif) */
+.toggle-switch:checked {
+ background-color: var(--primary-color);
+}
+
+.toggle-switch:checked::before {
+ transform: translateX(20px);
+}
+
+/* --- Tombol Reset --- */
+#reset-button {
+ width: 100%;
+ padding: 12px;
+ font-size: 1em;
+ font-weight: 600;
+ color: #fff;
+ background-color: var(--primary-color);
+ border: none;
+ border-radius: var(--border-radius);
+ cursor: pointer;
+ transition: background-color 0.2s ease, transform 0.1s ease;
+ margin-top: 10px;
+}
+
+#reset-button:hover {
+ background-color: var(--primary-hover);
+}
+
+#reset-button:active {
+ transform: scale(0.98);
+}

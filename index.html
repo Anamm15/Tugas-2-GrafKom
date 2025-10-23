@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tugas 2 Grafkom</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Wrapper utama untuk layouting -->
+    <div class="main-container">
+      <canvas id="gl-canvas" width="700" height="700"> </canvas>
+
+      <div class="controls-panel">
+        <h2><span class="emoji">🎮</span> Controller</h2>
+
+        <!-- Grup 1: Transformasi -->
+        <div class="control-group">
+          <h3>Transformasi</h3>
+          <!-- Rotasi X -->
+          <div class="control-item">
+            <label for="rotateX">Rotasi X</label>
+            <div class="slider-container">
+              <input
+                type="range"
+                id="rotateX"
+                min="-180"
+                max="180"
+                value="0"
+                step="1"
+              />
+              <span id="rotateX-val">0°</span>
+            </div>
+          </div>
+          <!-- Rotasi Y -->
+          <div class="control-item">
+            <label for="rotateY">Rotasi Y</label>
+            <div class="slider-container">
+              <input
+                type="range"
+                id="rotateY"
+                min="-180"
+                max="180"
+                value="0"
+                step="1"
+              />
+              <span id="rotateY-val">0°</span>
+            </div>
+          </div>
+          <!-- Translasi (Pan) X -->
+          <div class="control-item">
+            <label for="panX">Translasi X</label>
+            <div class="slider-container">
+              <input
+                type="range"
+                id="panX"
+                min="-1"
+                max="1"
+                value="0"
+                step="0.01"
+              />
+              <span id="panX-val">0.00</span>
+            </div>
+          </div>
+          <!-- Translasi (Pan) Y -->
+          <div class="control-item">
+            <label for="panY">Translasi Y</label>
+            <div class="slider-container">
+              <input
+                type="range"
+                id="panY"
+                min="-1"
+                max="1"
+                value="0"
+                step="0.01"
+              />
+              <span id="panY-val">0.00</span>
+            </div>
+          </div>
+          <!-- Skalasi -->
+          <div class="control-item">
+            <label for="scale">Skalasi</label>
+            <div class="slider-container">
+              <input
+                type="range"
+                id="scale"
+                min="0.1"
+                max="2"
+                value="1"
+                step="0.01"
+              />
+              <span id="scale-val">1.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grup 2: Viewing -->
+        <div class="control-group">
+          <h3>Viewing</h3>
+          <div class="control-item-toggle">
+            <label for="perspective">Gunakan Perspektif</label>
+            <input type="checkbox" id="perspective" class="toggle-switch" />
+          </div>
+          <small>(Nonaktif = Orthogonal)</small>
+        </div>
+
+        <!-- Grup 3: Lighting -->
+        <div class="control-group">
+          <h3>Lighting (Phong)</h3>
+
+          <!-- KONTROL WARNA BARU -->
+          <div class="control-item control-item-color">
+            <label for="ambientColor">Material Ambient</label>
+            <input type="color" id="ambientColor" value="#ffffff" />
+          </div>
+
+          <div class="control-item control-item-color">
+            <label for="diffuseColor">Material Diffuse</label>
+            <input type="color" id="diffuseColor" value="#ffffff" />
+          </div>
+
+          <div class="control-item control-item-color">
+            <label for="specularColor">Material Specular</label>
+            <input type="color" id="specularColor" value="#ffffff" />
+          </div>
+          <hr class="divider" />
+
+          <div class="control-item">
+            <label for="lightX">Posisi Cahaya X</label>
+            <div class="slider-container">
+              <input
+                type="range"
+                id="lightX"
+                min="-5"
+                max="5"
+                value="1"
+                step="0.1"
+              />
+              <span id="lightX-val">1.0</span>
+            </div>
+          </div>
+          <div class="control-item">
+            <label for="lightY">Posisi Cahaya Y</label>
+            <div class="slider-container">
+              <input
+                type="range"
+                id="lightY"
+                min="-5"
+                max="5"
+                value="1"
+                step="0.1"
+              />
+              <span id="lightY-val">1.0</span>
+            </div>
+          </div>
+          <div class="control-item">
+            <label for="lightZ">Posisi Cahaya Z</label>
+            <div class="slider-container">
+              <input
+                type="range"
+                id="lightZ"
+                min="-5"
+                max="5"
+                value="1"
+                step="0.1"
+              />
+              <span id="lightZ-val">1.0</span>
+            </div>
+          </div>
+          <div class="control-item">
+            <label for="shininess">Shininess</label>
+            <div class="slider-container">
+              <input
+                type="range"
+                id="shininess"
+                min="1"
+                max="200"
+                value="50"
+                step="1"
+              />
+              <span id="shininess-val">50</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grup 4: Texture -->
+        <div class="control-group">
+          <h3>Tekstur</h3>
+          <div class="control-item-toggle">
+            <label for="texture">Aktifkan Tekstur</label>
+            <input type="checkbox" id="texture" class="toggle-switch" checked />
+          </div>
+        </div>
+
+        <!-- Tombol Reset -->
+        <div class="control-group">
+          <button id="reset-button">Reset All</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shader dan Skrip Anda -->
+    <script id="vertex-shader" type="x-shader/x-vertex">
+      #version 300 es
+
+      in vec4 aPosition;
+      in vec3 aNormal;
+      in vec2 aTexCoord;
+
+      uniform vec3 uTheta;
+      uniform float uScale;
+      uniform vec2 uPan;
+
+      uniform mat4 uModelViewMatrix;
+      uniform mat4 uProjectionMatrix;
+
+      out vec3 vNormal;
+      out vec3 vPosition;
+      out vec2 vTexCoord;
+
+      void main() {
+       vec3 angles = radians(uTheta);
+       vec3 c = cos(angles);
+       vec3 s = sin(angles);
+
+       mat4 rx = mat4(1.0, 0.0, 0.0, 0.0,
+               0.0, c.x, s.x, 0.0,
+               0.0, -s.x, c.x, 0.0,
+               0.0, 0.0, 0.0, 1.0);
+
+       mat4 ry = mat4(c.y, 0.0, -s.y, 0.0,
+               0.0, 1.0, 0.0, 0.0,
+               s.y, 0.0, c.y, 0.0,
+               0.0, 0.0, 0.0, 1.0);
+
+       vec4 pos = rx * ry * aPosition;
+       pos.xy += vec2(uPan);
+       pos.xyz *= uScale;
+
+       vec4 eyePos = uModelViewMatrix * pos;
+       vPosition = eyePos.xyz;
+       vTexCoord = aTexCoord;
+       vNormal = normalize((uModelViewMatrix * vec4(aNormal, 0.0)).xyz);
+       gl_Position = uProjectionMatrix * eyePos;
+      }
+    </script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+      #version 300 es
+
+      precision mediump float;
+
+      in vec3 vNormal;
+      in vec3 vPosition;
+      in vec2 vTexCoord;
+
+      uniform vec4 uAmbientProduct;
+      uniform vec4 uDiffuseProduct;
+      uniform vec4 uSpecularProduct;
+      uniform vec4 uLightPosition;
+      uniform float uShininess;
+      uniform sampler2D uTextureMap;
+      uniform bool uUseTexture;
+
+      out vec4 fColor;
+
+      void main() {
+       vec3 N = normalize(vNormal);
+       vec3 L;
+       if (uLightPosition.w == 0.0) { L = normalize(uLightPosition.xyz); }
+       else { L = normalize(uLightPosition.xyz - vPosition); }
+       vec3 E = normalize(-vPosition);
+       vec3 R = reflect(-L, N);
+       vec4 ambient = uAmbientProduct;
+       float Kd = max(dot(L, N), 0.0);
+       vec4 diffuse = Kd * uDiffuseProduct;
+       float Ks = pow(max(dot(R, E), 0.0), uShininess);
+       vec4 specular = Ks * uSpecularProduct;
+       if (dot(L, N) < 0.0) { specular = vec4(0.0); }
+
+       vec4 color = ambient + diffuse + specular;
+       color.a = 1.0;
+
+       if (uUseTexture) {
+         fColor = color * texture(uTextureMap, vTexCoord);
+       } else {
+         fColor = color;
+       }
+      }
+    </script>
+
+    <script src="initShaders.js"></script>
+    <script src="MVnew.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
