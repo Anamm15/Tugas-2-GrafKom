@@ -2,37 +2,39 @@
 var canvas;
 var gl;
 var program;
+var numVertices = 0; // Jumlah vertex yang akan digambar
 
+// --- Variabel State (Penyimpanan) ---
 var theta = vec3(0, 0, 0);
 var scale = 1.0;
 var pan = vec2(0, 0);
 var usePerspective = false;
 var lightPosition = vec4(1.0, 1.0, 1.0, 0.0);
 var shininess = 50.0;
-var useTexture = false;
-var radius = 1.5;
-var phi = 0.0;
-
-// Properti cahaya
-var lightAmbient = vec4(1.0, 1.0, 1.0, 1.0);
-var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
-var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
-
-// Properti material
+var useTexture = false; // NONAKTIFKAN TEKSTUR SECARA DEFAULT
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0);
 var lightDiffuse = vec4(1.0, 1.0, 1.0, 1.0);
 var lightSpecular = vec4(1.0, 1.0, 1.0, 1.0);
-
+var materialAmbient = vec4(1.0, 0.0, 0.0, 1.0); // Default merah
+var materialDiffuse = vec4(1.0, 0.0, 0.0, 1.0); // Default merah
+var materialSpecular = vec4(1.0, 1.0, 1.0, 1.0); // Default putih
 var modelViewMatrix, projectionMatrix;
 
-// Variabel untuk uniform
+// --- Variabel Kontrol Mouse ---
+var mouseDown = false;
+var lastMouseX = null;
+var lastMouseY = null;
+var mouseButton = -1;
+
+// --- Lokasi Uniform Shader ---
 var uThetaLoc, uScaleLoc, uPanLoc;
 var uModelViewMatrixLoc, uProjectionMatrixLoc;
 var uAmbientProductLoc, uDiffuseProductLoc, uSpecularProductLoc;
 var uLightPositionLoc, uShininessLoc, uUseTextureLoc;
 
-// Variabel untuk controller
-var rotateXSlider, rotateYSlider, panXSlider, panYSlider, scaleSlider;
+// --- Referensi Elemen UI ---
+// (Semua variabel referensi UI tetap sama)
+var rotateXSlider, rotateYScalder, panXSlider, panYSlider, scaleSlider;
 var rotateXSpan, rotateYSpan, panXSpan, panYSpan, scaleSpan;
 var perspectiveCheck;
 var ambientColorPicker, diffuseColorPicker, specularColorPicker;
@@ -43,65 +45,63 @@ var textureCheck;
 var resetButton;
 
 
-function cube() {
-   var positions = [];
-   var normals = [];
-   var texCoords = [];
+// --- FUNGSI BARU UNTUK MEMBUAT BOLA ---
+// Diadaptasi dari shadedSphere1.js
+function generateSphereData(numTimesToSubdivide) {
+   var positionsArray = [];
+   var normalsArray = [];
+   var index = 0;
 
-   var vertices = [
-      vec4(-0.5, -0.5, 0.5, 1.0),
-      vec4(-0.5, 0.5, 0.5, 1.0),
-      vec4(0.5, 0.5, 0.5, 1.0),
-      vec4(0.5, -0.5, 0.5, 1.0),
-      vec4(-0.5, -0.5, -0.5, 1.0),
-      vec4(-0.5, 0.5, -0.5, 1.0),
-      vec4(0.5, 0.5, -0.5, 1.0),
-      vec4(0.5, -0.5, -0.5, 1.0)
-   ];
+   var va = vec4(0.0, 0.0, -1.0, 1);
+   var vb = vec4(0.0, 0.942809, 0.333333, 1);
+   var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
+   var vd = vec4(0.816497, -0.471405, 0.333333, 1);
 
-   // Normal untuk setiap 6 sisi
-   var faceNormals = [
-      vec3(0.0, 0.0, 1.0),
-      vec3(0.0, 0.0, 1.0),
-      vec3(0.0, 0.0, 1.0),
-      vec3(0.0, 0.0, 1.0),
-      vec3(0.0, 0.0, 1.0),
-      vec3(0.0, 0.0, 1.0),
-   ];
+   function triangle(a, b, c) {
+      positionsArray.push(a);
+      positionsArray.push(b);
+      positionsArray.push(c);
 
-   // Koordinat tekstur standar
-   var texCoord = [
-      vec2(0, 0),
-      vec2(0, 1),
-      vec2(1, 1),
-      vec2(1, 0)
-   ];
+      // Normal adalah sama dengan posisi untuk bola unit
+      // Kita hanya perlu xyz
+      normalsArray.push(vec3(a[0], a[1], a[2]));
+      normalsArray.push(vec3(b[0], b[1], b[2]));
+      normalsArray.push(vec3(c[0], c[1], c[2]));
 
-   function quad(a, b, c, d, normalIndex) {
-      var indices = [a, b, c, a, c, d];
-
-      for (var i = 0; i < indices.length; ++i) {
-         positions.push(vertices[indices[i]]);
-         normals.push(faceNormals[normalIndex]);
-      }
-
-      texCoords.push(texCoord[0]);
-      texCoords.push(texCoord[1]);
-      texCoords.push(texCoord[2]);
-      texCoords.push(texCoord[0]);
-      texCoords.push(texCoord[2]);
-      texCoords.push(texCoord[3]);
+      index += 3;
    }
 
-   quad(1, 0, 3, 2, 0);
-   quad(2, 3, 7, 6, 4);
-   quad(3, 0, 4, 7, 3);
-   quad(6, 5, 1, 2, 2);
-   quad(4, 5, 6, 7, 1);
-   quad(5, 4, 0, 1, 5);
+   function divideTriangle(a, b, c, count) {
+      if (count > 0) {
+         var ab = mix(a, b, 0.5);
+         var ac = mix(a, c, 0.5);
+         var bc = mix(b, c, 0.5);
 
-   return { positions, normals, texCoords };
+         ab = normalize(ab, true);
+         ac = normalize(ac, true);
+         bc = normalize(bc, true);
+
+         divideTriangle(a, ab, ac, count - 1);
+         divideTriangle(ab, b, bc, count - 1);
+         divideTriangle(bc, c, ac, count - 1);
+         divideTriangle(ab, bc, ac, count - 1);
+      } else {
+         triangle(a, b, c);
+      }
+   }
+
+   function tetrahedron(a, b, c, d, n) {
+      divideTriangle(a, b, c, n);
+      divideTriangle(d, c, b, n);
+      divideTriangle(a, d, b, n);
+      divideTriangle(a, c, d, n);
+   }
+
+   tetrahedron(va, vb, vc, vd, numTimesToSubdivide);
+
+   return { positions: positionsArray, normals: normalsArray, vertexCount: index };
 }
+
 
 window.onload = function init() {
    canvas = document.getElementById("gl-canvas");
@@ -116,35 +116,35 @@ window.onload = function init() {
    program = initShaders(gl, "vertex-shader", "fragment-shader");
    gl.useProgram(program);
 
-   var { positions, normals, texCoords } = cube();
+   // --- MODIFIKASI: Hasilkan data BOLA, bukan KUBUS ---
+   var sphereData = generateSphereData(5); // 5 subdivisi, ganti jika terlalu berat
+   numVertices = sphereData.vertexCount;
 
-   // 1. Setup WebGL dan buffer
-   setupGLAndBuffers(positions, normals, texCoords);
+   // Kirim data baru ke buffer
+   setupGLAndBuffers(sphereData.positions, sphereData.normals);
 
-   // 2. Ambil semua referensi elemen UI dari HTML
    getAllUIElements();
-
-   // 3. Ambil semua lokasi uniform dari shader
    getAllUniformLocations();
-
-   // 4. Pasang event listener ke elemen-elemen UI
    attachEventListeners();
-
-   // 5. Atur nilai awal untuk semua uniform di shader
    setInitialShaderState();
 
    render();
 }
 
-function setupGLAndBuffers(positions, normals, texCoords) {
+// --- MODIFIKASI: Disederhanakan untuk BOLA ---
+// (Menghapus aColor dan aTexCoord)
+function setupGLAndBuffers(positions, normals) {
+
+   // --- BUFFER NORMAL (nBuffer) ---
    var nBuffer = gl.createBuffer();
    gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW);
-
    var normalLoc = gl.getAttribLocation(program, "aNormal");
+   // Perhatikan: normal kita sekarang vec3, bukan vec4
    gl.vertexAttribPointer(normalLoc, 3, gl.FLOAT, false, 0, 0);
    gl.enableVertexAttribArray(normalLoc);
 
+   // --- BUFFER VERTEX (vBuffer) ---
    var vBuffer = gl.createBuffer();
    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, flatten(positions), gl.STATIC_DRAW);
@@ -152,16 +152,12 @@ function setupGLAndBuffers(positions, normals, texCoords) {
    gl.vertexAttribPointer(positionLoc, 4, gl.FLOAT, false, 0, 0);
    gl.enableVertexAttribArray(positionLoc);
 
-   var tBuffer = gl.createBuffer();
-   gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
-   gl.bufferData(gl.ARRAY_BUFFER, flatten(texCoords), gl.STATIC_DRAW);
-   var texCoordLoc = gl.getAttribLocation(program, "aTexCoord");
-   gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 0, 0);
-   gl.enableVertexAttribArray(texCoordLoc);
+   // --- BUFFER TEKSTUR (tBuffer) DIHAPUS ---
+   // Kita tidak punya koordinat tekstur untuk bola ini
 }
 
 function getAllUIElements() {
-   // Grup Transformasi
+   // ... (Tidak berubah)
    rotateXSlider = document.getElementById('rotateX');
    rotateXSpan = document.getElementById('rotateX-val');
    rotateYSlider = document.getElementById('rotateY');
@@ -172,11 +168,7 @@ function getAllUIElements() {
    panYSpan = document.getElementById('panY-val');
    scaleSlider = document.getElementById('scale');
    scaleSpan = document.getElementById('scale-val');
-
-   // Grup Viewing
    perspectiveCheck = document.getElementById('perspective');
-
-   // Grup Lighting
    ambientColorPicker = document.getElementById('ambientColor');
    diffuseColorPicker = document.getElementById('diffuseColor');
    specularColorPicker = document.getElementById('specularColor');
@@ -188,23 +180,17 @@ function getAllUIElements() {
    lightZSpan = document.getElementById('lightZ-val');
    shininessSlider = document.getElementById('shininess');
    shininessSpan = document.getElementById('shininess-val');
-
-   // Grup Texture
    textureCheck = document.getElementById('texture');
-
-   // Tombol Reset
    resetButton = document.getElementById('reset-button');
 }
 
 function getAllUniformLocations() {
-   // Vertex Shader Uniforms
+   // ... (Tidak berubah)
    uThetaLoc = gl.getUniformLocation(program, "uTheta");
    uScaleLoc = gl.getUniformLocation(program, "uScale");
    uPanLoc = gl.getUniformLocation(program, "uPan");
    uModelViewMatrixLoc = gl.getUniformLocation(program, "uModelViewMatrix");
    uProjectionMatrixLoc = gl.getUniformLocation(program, "uProjectionMatrix");
-
-   // Fragment Shader Uniforms
    uAmbientProductLoc = gl.getUniformLocation(program, "uAmbientProduct");
    uDiffuseProductLoc = gl.getUniformLocation(program, "uDiffuseProduct");
    uSpecularProductLoc = gl.getUniformLocation(program, "uSpecularProduct");
@@ -214,33 +200,24 @@ function getAllUniformLocations() {
 }
 
 function attachEventListeners() {
-   // --- TRANSFORMASI ---
+   // --- TRANSFORMASI (Slider) ---
    function updateTransformation() {
+      // ... (Tidak berubah)
       theta[0] = parseFloat(rotateXSlider.value);
       theta[1] = parseFloat(rotateYSlider.value);
       pan[0] = parseFloat(panXSlider.value);
       pan[1] = parseFloat(panYSlider.value);
       scale = parseFloat(scaleSlider.value);
-
       rotateXSpan.textContent = Math.round(theta[0]) + '°';
       rotateYSpan.textContent = Math.round(theta[1]) + '°';
       panXSpan.textContent = pan[0].toFixed(2);
       panYSpan.textContent = pan[1].toFixed(2);
       scaleSpan.textContent = scale.toFixed(2);
-
-      // Mengirim nilai ke shader
       gl.uniform3fv(uThetaLoc, flatten(theta));
       gl.uniform2fv(uPanLoc, flatten(pan));
       gl.uniform1f(uScaleLoc, scale);
-
       render();
    }
-
-   rotateXSlider.addEventListener('input', updateTransformation);
-   rotateYSlider.addEventListener('input', updateTransformation);
-   panXSlider.addEventListener('input', updateTransformation);
-   panYSlider.addEventListener('input', updateTransformation);
-   scaleSlider.addEventListener('input', updateTransformation);
    rotateXSlider.addEventListener('input', updateTransformation);
    rotateYSlider.addEventListener('input', updateTransformation);
    panXSlider.addEventListener('input', updateTransformation);
@@ -249,14 +226,13 @@ function attachEventListeners() {
 
    // --- VIEWING ---
    function updateProjection() {
+      // ... (Tidak berubah)
       usePerspective = perspectiveCheck.checked;
-
       if (usePerspective) {
          projectionMatrix = perspective(45.0, 1.0, 0.1, 10.0);
       } else {
          projectionMatrix = ortho(-1.5, 1.5, -1.5, 1.5, -10.0, 10.0);
       }
-
       gl.uniformMatrix4fv(uProjectionMatrixLoc, false, flatten(projectionMatrix));
       render();
    }
@@ -264,14 +240,13 @@ function attachEventListeners() {
 
    // --- LIGHTING ---
    function updateLightPosition() {
+      // ... (Tidak berubah)
       lightPosition[0] = parseFloat(lightXSlider.value);
       lightPosition[1] = parseFloat(lightYSlider.value);
       lightPosition[2] = parseFloat(lightZSlider.value);
-
       lightXSpan.textContent = lightPosition[0].toFixed(1);
       lightYSpan.textContent = lightPosition[1].toFixed(1);
       lightZSpan.textContent = lightPosition[2].toFixed(1);
-
       gl.uniform4fv(uLightPositionLoc, flatten(lightPosition));
       render();
    }
@@ -280,6 +255,7 @@ function attachEventListeners() {
    lightZSlider.addEventListener('input', updateLightPosition);
 
    function updateShininess() {
+      // ... (Tidak berubah)
       shininess = parseFloat(shininessSlider.value);
       shininessSpan.textContent = shininess;
       gl.uniform1f(uShininessLoc, shininess);
@@ -288,31 +264,36 @@ function attachEventListeners() {
    shininessSlider.addEventListener('input', updateShininess);
 
    function updateMaterialColors() {
+      // ... (Tidak berubah)
       materialAmbient = hexToVec4(ambientColorPicker.value);
       materialDiffuse = hexToVec4(diffuseColorPicker.value);
       materialSpecular = hexToVec4(specularColorPicker.value);
-
       gl.uniform4fv(uAmbientProductLoc, flatten(mult(lightAmbient, materialAmbient)));
       gl.uniform4fv(uDiffuseProductLoc, flatten(mult(lightDiffuse, materialDiffuse)));
       gl.uniform4fv(uSpecularProductLoc, flatten(mult(lightSpecular, materialSpecular)));
-
       render();
    }
    ambientColorPicker.addEventListener('input', updateMaterialColors);
    diffuseColorPicker.addEventListener('input', updateMaterialColors);
    specularColorPicker.addEventListener('input', updateMaterialColors);
 
-   // --- TEXTURE ---
+   // --- TEXTURE (MODIFIKASI) ---
    function updateTextureToggle() {
       useTexture = textureCheck.checked;
+      // Peringatan: Kita tidak punya data tekstur, jadi
+      // mencentang ini akan menghasilkan warna "belang"
+      // seperti yang Anda lihat sebelumnya.
+      if (useTexture) {
+         console.warn("Tekstur diaktifkan tetapi tidak ada data tekstur (texCoords) yang di-bind.");
+      }
       gl.uniform1i(uUseTextureLoc, useTexture);
       render();
    }
    textureCheck.addEventListener('change', updateTextureToggle);
 
-   // --- RESET BUTTON ---
+   // --- RESET BUTTON (MODIFIKASI) ---
    function resetAll() {
-      // Reset slider ke nilai default
+      // ... (Tidak berubah kecuali 'textureCheck')
       rotateXSlider.value = 0;
       rotateYSlider.value = 0;
       panXSlider.value = 0;
@@ -322,166 +303,105 @@ function attachEventListeners() {
       lightYSlider.value = 1;
       lightZSlider.value = 1;
       shininessSlider.value = 50;
-
-      // Reset checkbox
       perspectiveCheck.checked = false;
+
+      // MODIFIKASI: Pastikan tekstur nonaktif saat di-reset
       textureCheck.checked = false;
 
-      // Reset color picker
       ambientColorPicker.value = '#ff0000';
       diffuseColorPicker.value = '#ff0000';
       specularColorPicker.value = '#ffffff';
 
-      // Panggil SEMUA fungsi update untuk menerapkan nilai default
       updateTransformation();
       updateProjection();
       updateLightPosition();
       updateShininess();
       updateMaterialColors();
-      updateTextureToggle();
-
-      render();
+      updateTextureToggle(); // Panggil ini untuk mengirim 'useTexture = false'
    }
    resetButton.addEventListener('click', resetAll);
 
+   // --- EVENT LISTENER MOUSE ---
+   // ... (Tidak berubah)
    canvas.addEventListener('mousedown', function (event) {
       mouseDown = true;
       mouseButton = event.button;
       lastMouseX = event.clientX;
       lastMouseY = event.clientY;
    });
-
    canvas.addEventListener('mouseup', function (event) {
       mouseDown = false;
       mouseButton = -1;
    });
-
    canvas.addEventListener('mousemove', function (event) {
-      if (!mouseDown) {
-         return;
-      }
-
+      if (!mouseDown) return;
       var newX = event.clientX;
       var newY = event.clientY;
       var dx = newX - lastMouseX;
       var dy = newY - lastMouseY;
-
       if (mouseButton === 0) {
          theta[0] += dy * 0.5;
          theta[1] += dx * 0.5;
-
          rotateXSlider.value = theta[0];
          rotateYSlider.value = theta[1];
-
       } else if (mouseButton === 2) {
          pan[0] += dx * (2.0 / canvas.width);
          pan[1] -= dy * (2.0 / canvas.height);
-
          pan[0] = Math.max(-1.0, Math.min(1.0, pan[0]));
          pan[1] = Math.max(-1.0, Math.min(1.0, pan[1]));
-
          panXSlider.value = pan[0];
          panYSlider.value = pan[1];
       }
-
       lastMouseX = newX;
       lastMouseY = newY;
-
       updateTransformation();
    });
-
    canvas.addEventListener('wheel', function (event) {
       event.preventDefault();
-
       var zoomSpeed = 0.1;
-      if (event.deltaY < 0) {
-         scale += zoomSpeed;
-      } else if (event.deltaY > 0) {
-         scale -= zoomSpeed;
-      }
-
+      if (event.deltaY < 0) scale += zoomSpeed;
+      else if (event.deltaY > 0) scale -= zoomSpeed;
       scale = Math.max(0.1, Math.min(2.0, scale));
       scaleSlider.value = scale;
-
       updateTransformation();
    });
-
    canvas.addEventListener('contextmenu', function (event) {
       event.preventDefault();
    });
 }
 
+// --- Fungsi Helper (Pembantu) ---
 function hexToVec4(hex) {
-   // Hapus '#' jika ada
+   // ... (Tidak berubah)
    hex = hex.replace('#', '');
-
-   // Konversi rr, gg, bb ke integer
    var r = parseInt(hex.substring(0, 2), 16);
    var g = parseInt(hex.substring(2, 4), 16);
    var b = parseInt(hex.substring(4, 6), 16);
-
-   // Normalisasi ke [0, 1] dan kembalikan sebagai vec4
    return vec4(r / 255.0, g / 255.0, b / 255.0, 1.0);
 }
 
-// Mengatur nilai-nilai awal saat aplikasi dimuat
+// --- MODIFIKASI: Pastikan tekstur nonaktif saat awal ---
 function setInitialShaderState() {
-   // Mengatur model view matrix awal
    modelViewMatrix = lookAt(vec3(0, 0, 2), vec3(0, 0, 0), vec3(0, 1, 0));
    gl.uniformMatrix4fv(uModelViewMatrixLoc, false, flatten(modelViewMatrix));
 
+   // Panggil semua fungsi update
+   updateTransformation();
+   updateProjection();
+   updateLightPosition();
+   updateShininess();
+   updateMaterialColors();
 
-   // Mengambil Nilai Default dari HTML
-   theta[0] = parseFloat(rotateXSlider.value);
-   theta[1] = parseFloat(rotateYSlider.value);
-   pan[0] = parseFloat(panXSlider.value);
-   pan[1] = parseFloat(panYSlider.value);
-   scale = parseFloat(scaleSlider.value);
-   usePerspective = perspectiveCheck.checked;
-   lightPosition[0] = parseFloat(lightXSlider.value);
-   lightPosition[1] = parseFloat(lightYSlider.value);
-   lightPosition[2] = parseFloat(lightZSlider.value);
-   shininess = parseFloat(shininessSlider.value);
-   materialAmbient = hexToVec4(ambientColorPicker.value);
-   materialDiffuse = hexToVec4(diffuseColorPicker.value);
-   materialSpecular = hexToVec4(specularColorPicker.value);
-   useTexture = textureCheck.checked;
-
-   // Viewing
-   if (usePerspective) {
-      projectionMatrix = perspective(45.0, 1.0, 0.1, 10.0);
-   } else {
-      projectionMatrix = ortho(-1.5, 1.5, -1.5, 1.5, -10.0, 10.0);
-   }
-
-   // Kirim nilai awal ke shader
-   gl.uniform3fv(uThetaLoc, flatten(theta));
-   gl.uniform2fv(uPanLoc, flatten(pan));
-   gl.uniform1f(uScaleLoc, scale);
-   gl.uniformMatrix4fv(uProjectionMatrixLoc, false, flatten(projectionMatrix));
-   gl.uniform4fv(uLightPositionLoc, flatten(lightPosition));
-   gl.uniform1f(uShininessLoc, shininess);
-   gl.uniform1i(uUseTextureLoc, useTexture);
-
-   // Kirim produk material dan cahaya awal
-   gl.uniform4fv(uAmbientProductLoc, flatten(mult(lightAmbient, materialAmbient)));
-   gl.uniform4fv(uDiffuseProductLoc, flatten(mult(lightDiffuse, materialDiffuse)));
-   gl.uniform4fv(uSpecularProductLoc, flatten(mult(lightSpecular, materialSpecular)));
+   // MODIFIKASI: Pastikan 'textureCheck' dibaca sebagai nonaktif
+   // dan dikirim ke shader
+   textureCheck.checked = false; // Set UI
+   updateTextureToggle();      // Kirim ke shader
 }
 
+// --- MODIFIKASI: Gambar jumlah vertex BOLA ---
 function render() {
    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-   gl.drawArrays(gl.TRIANGLES, 0, 36);
+   // 'numVertices' diatur di 'init()'
+   gl.drawArrays(gl.TRIANGLES, 0, numVertices);
 }
 
-function configureTexture(image) {
-   var texture = gl.createTexture();
-   gl.activeTexture(gl.TEXTURE0);
-   gl.bindTexture(gl.TEXTURE_2D, texture);
-   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texSize, texSize, 0,
-      gl.RGBA, gl.UNSIGNED_BYTE, image);
-   gl.generateMipmap(gl.TEXTURE_2D);
-   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
-      gl.NEAREST_MIPMAP_LINEAR);
-   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-}
