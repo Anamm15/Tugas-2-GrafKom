@@ -530,7 +530,7 @@ function createTowerGeometry(towerYOffset = 0.0) {
          shape: 'createCylinder',
          args: [0.6, 1.5, 16],
          transform: mult(
-            translate(0, baseY - 0.455, 0),
+            translate(0, baseY - 0.56, 0),
             mult(rotateY(90), scale(0.05, 0.03, 0.05))
          )
       },
