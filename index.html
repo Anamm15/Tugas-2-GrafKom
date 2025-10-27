@@ -7,9 +7,18 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- Wrapper utama untuk layouting -->
     <div class="main-container">
-      <canvas id="gl-canvas" width="700" height="700"> </canvas>
+        <div class="visual-area horizontal">
+    <!-- Kolom kiri: gambar referensi -->
+    <div class="reference-column">
+      <img src="horeg 2.jpg" alt="Referensi 1" class="reference-img" />
+      <img src="horeg 3.jpg" alt="Referensi 2" class="reference-img" />
+      <img src="horeg 4.jpg" alt="Referensi 3" class="reference-img" />
+    </div>
+
+    <!-- Kolom kanan: canvas -->
+    <canvas id="gl-canvas" width="700" height="700"></canvas>
+  </div>
 
       <div class="controls-panel">
         <h2><span class="emoji">🎮</span> Controller</h2>
@@ -24,8 +33,8 @@
               <input
                 type="range"
                 id="rotateX"
-                min="-180"
-                max="180"
+                min="-720"
+                max="720"
                 value="0"
                 step="1"
               />
@@ -39,8 +48,8 @@
               <input
                 type="range"
                 id="rotateY"
-                min="-180"
-                max="180"
+                min="-720"
+                max="720"
                 value="0"
                 step="1"
               />
@@ -85,11 +94,26 @@
                 type="range"
                 id="scale"
                 min="0.1"
-                max="2"
+                max="3"
                 value="1"
                 step="0.01"
               />
               <span id="scale-val">1.00</span>
+            </div>
+          </div>
+
+          <div class="control-item">
+            <label for="legAngle">Sudut Kaki (Hierarki)</label>
+            <div class="slider-container">
+              <input
+                type="range"
+                id="legAngle"
+                min="15"
+                max="60"
+                value="30"
+                step="0.5"
+              />
+              <span id="legAngle-val">30.0°</span>
             </div>
           </div>
         </div>
@@ -190,22 +214,95 @@
             <label for="texture">Aktifkan Tekstur</label>
             <input type="checkbox" id="texture" class="toggle-switch" />
           </div>
-        </div>
 
-<!-- Tombol Animasi -->
-<div class="control-group">
-  <button id="toggle-animation">⏸️ Pause Animasi</button>
+          <div class="texture-controls">
+            <button id="useCheckerTex" class="btn">🟦 Checkerboard</button>
+            <button id="useImageTex" class="btn">🖼️ Gambar</button>
+            <br />
+          </div>
+          </div>
+
+        <!-- Grup 5: Animasi -->
+        <div class="control-group">
+          <h3>Kontrol Animasi</h3>
+
+          <!-- Tombol Play/Pause -->
+          <!-- Pilihan Animasi -->
+          <div class="control-item-toggle">
+            <label for="tower-animation">
+              Animasi Vertikal Tongkat
+            </label>
+            <input
+              type="checkbox"
+              id="tower-animation"
+              class="toggle-switch"
+              checked
+            />
+          </div>
+
+          <div class="control-item-toggle">
+            <label for="cube-animation">
+              Animasi Rotasi Kotak
+            </label>
+            <input
+              type="checkbox"
+              id="cube-animation"
+              class="toggle-switch"
+              checked
+            />
+          </div>
+
+          <!-- Tombol untuk memilih keduanya -->
+          <div class="control-group">
+            <button id="both-animation" style="margin-top: 10px">
+              🎭 Kedua Animasi
+            </button>
+            <button id="toggle-animation" class="btn">⏸️ Pause Animasi</button>
+          </div>
+
+          <div class="control-group">
+            <button id="reset-button" class="btn">Reset All</button>
+            
+          </div>
+        </div>
+          
+  </div>
+  <div class="right-video">
+    <video controls autoplay muted loop>
+      <source src="video.mp4" type="video/mp4" />
+      Browser Anda tidak mendukung video tag.
+    </video>
+    <video controls autoplay muted loop>
+      <source src="video_2.mp4" type="video/mp4" />
+      Browser Anda tidak mendukung video tag.
+    </video>
+        
+      </div>
+      
+      
+    </div>
+    <!-- Bagian Deskripsi Kelompok -->
+<!-- Bagian Deskripsi Kelompok -->
+<div class="footer-box">
+  <h3>Grafkom - Sound System</h3>
+  <p>
+    <strong>Anggota:</strong><br>
+    Thopaz Givangkara Rosadi – 5025231050 <br>
+    Nadin Nabil Hafizh A. – 5025231061 <br>
+    Choirul Anam – 5025231145
+  </p>
+<br>
+  <p><strong>Pembagian tugas:</strong></p>
+    <p>Thopaz Givangkara Rosadi: Pembuatan kubus, detail kecil, lingkaran, dan rotasi pada tongkat <br>
+    <p>Nadin Nabil Hafizh A.: Pembuatan kaki pada tongkat, penghubung kaki, dan gerak vertikal pada tongkat <br>
+    <p>Choirul Anam: Setup environment, pembuatan texture, lighting, perspective, dan detail kotak <br>
+
+
+  <p><strong>Desain Tree:</strong></p>
+  <img src="tree.png" alt="">
 </div>
 
 
-        <!-- Tombol Reset -->
-        <div class="control-group">
-          <button id="reset-button">Reset All</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Shader dan Skrip Anda -->
     <script id="vertex-shader" type="x-shader/x-vertex">
       #version 300 es
 
